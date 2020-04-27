@@ -13,6 +13,10 @@ void col2im_add_pixel(int *im, int height, int width, int channels,
                       int row, int col, int channel, int pad, int val);
 void naiveGEMM(int *out, int *kernel, int *in,
                int kernel_row, int kernel_col, int in_row, int in_col);
+void naiveMatMul(int *out, int *kernel, int *in,
+                 int out_row, int out_col,
+                 int kernel_row, int kernel_col,
+                 int in_row, int in_col);
 
 void testConv1Channel();
 
@@ -73,6 +77,10 @@ void testConv1Channel()
     int data_col_size = data_col_height * data_col_width;
     int *data_col = new int[data_col_size];
 
+    int out_col_height = data_col_height;
+    int out_col_width = data_col_width;
+    int *out_col = new int[out_col_height * out_col_width];
+
     // Starts to do convolution using im2col
     im2col(in, in_c, in_h, in_w,
            kernel_h, stride, pad, data_col);    
@@ -109,20 +117,47 @@ void testConv1Channel()
         }
     }
 
-    // apply GEMM
+    // Apply GEMM
     naiveGEMM(out, kernel, data_col,
         kernel_col_height, kernel_col_width, data_col_height, data_col_width);
+
+    // Apply matrix multiplication
+#if 0
+    naiveMatMul(out_col, kernel, data_col,
+                out_h, out_c, kernel_col_height, kernel_col_width,
+                data_col_height, data_col_width);
+#endif
+
+    // Output out_col
+    // The dimension of out_col should be N x C x out_h x out_w
+#if 0
+    line_counter = 0;
+    cout << endl << "out_col content:" << endl;
+    for(int i = 0; i < out_col_height; i++)
+    {
+        for(int j = 0; j < out_col_width; j++)
+        {
+            cout << setw(4) << out_col[i * out_col_width + j] << " ";
+            line_counter++;
+            if(line_counter % out_col_width == 0)
+            {
+                cout << endl;
+            }
+        }
+    }
+#endif
 
     // Then do col2im
 
     // Output out
     // The dimension of out should be N x out_h x out_w
+    line_counter = 0;
     cout << endl << "out content:" << endl;
     for(int i = 0; i < out_c * out_h * out_w; i++)
     {
         cout << setw(4) << out[i] << " ";
         line_counter++;
-        if(line_counter % (out_h * out_w) == 0)
+        if(line_counter % out_w == 0)
         {
             cout << endl;
         }
@@ -213,7 +248,7 @@ void col2im_add_pixel(int *im, int height, int width, int channels,
 void naiveGEMM(int *out, int *kernel, int *in,
                int kernel_row, int kernel_col, int in_row, int in_col)
 {
-    // The output matrix dimension will be kernel_row * in_col
+    /* The output matrix dimension will be kernel_row * in_col */
 
     for(int i = 0; i < kernel_row; i++)
     {
@@ -225,9 +260,29 @@ void naiveGEMM(int *out, int *kernel, int *in,
                 out[i * in_col + j] +=
                     kernel[i * kernel_col + k] *
                     in[k * in_col + j];
-                cout << i << " " << j << " " << k << " " << kernel[i*kernel_col+k] << " " << in[k*in_col+j] << endl;
             }
         }
     }
 
+}
+
+void naiveMatMul(int *out, int *kernel, int *in,
+                 int out_row, int out_col,
+                 int kernel_row, int kernel_col,
+                 int in_row, int in_col)
+{
+    /* The output colum dimension will be N x (out_h x out_w) */
+
+    for(int i = 0; i < kernel_row; i++)
+    {
+        for(int j = 0; j < in_col; j++)
+        {
+            for(int k = 0; k < kernel_col; k++)
+            {
+                out[k * out_col + j] = 
+                    kernel[i * kernel_col + k] *
+                    in[k * in_col + j];
+            }
+        }
+    }
 }
