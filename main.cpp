@@ -2,7 +2,25 @@
 
 using namespace std;
 
+void im2col(int *data_im, int channels, int height, int width,
+            int ksize, int stride, int pad, int *data_col);
+void col2im(int *data_col, int channels, int height, int width,
+            int ksize, int stride, int pad, int *data_im);
+int im2col_get_pixel(int *im, int height, int width, int channels,
+                     int row, int col, int channel, int pad);
+void col2im_add_pixel(int *im, int height, int width, int channels,
+                      int row, int col, int channel, int pad, int val);
+
+void testConv1Channel();
+
 int main()
+{
+    testConv1Channel();
+        
+    return 0;
+}
+
+void testConv1Channel()
 {
     // A 1x5x5 matrix (CHW)
     int in_c = 1;
@@ -34,7 +52,95 @@ int main()
 
     // A output matrix (CHW)
     // the dimension should be 1x3x3
-    int out_c = 1;
-    int out_h = 3;
-    int out_w = 3;
+    int out_c = kernel_num;
+    int out_h = (in_h + 2 * pad - kernel_h) / stride + 1;
+    int out_w = (in_w + 2 * pad - kernel_w) / stride + 1;
+    int out[] = new int[out_c * out_h * out_w];
+
+    // Starts to do convolution using im2col
+    
+    // Output the result
+    //
+
+}
+
+void im2col(int *data_im, int channels, int height, int width,
+            int ksize, int stride, int pad, int *data_col)
+{
+    int height_col = (height + 2 * pad - ksize) / stride + 1;
+    int width_col = (width + 2 * pad - ksize) / stride + 1;
+    int channels_col = channels * ksize * ksize;
+
+    for(int c = 0; i < channels_col; c++)
+    {
+        int w_offset = c % ksize;
+        int h_offset = (c / ksize) % ksize;
+        int c_im = c / ksize / ksize;
+        for(int h = 0; h < height_col; h++)
+        {
+            for(int int w = 0; w < width_col; w++)
+            {
+                int im_row = h_offset + h * stride;
+                int im_col = w_offset + w * stride;
+                int col_index = (c * height_col + h) * width_col + w;
+                data_col[col_index] = im2col_get_pixel(data_im, height, width, channels,
+                                      im_row, im_col, pad);
+            }
+        }
+    }
+}
+
+void col2im(int *data_col, int channels, int height, int width,
+            int ksize, int stride, int pad, int *data_im)
+{
+    int height_col = (height + 2 * pad - ksize) / stride + 1;
+    int width_col = (width + 2 * pad - ksize) / stride + 1;
+    int channels_col = channels * ksize * ksize;
+
+    for(int c = 0; c < channels_col; c++)
+    {
+        int w_offset = c % ksize;
+        int h_offset = (c / ksize) % ksize;
+        int c_im = c / ksize / ksize;
+        for(int h = 0; h < height_col; h++)
+        {
+            for(int w = 0; w < width_col; w++)
+            {
+                int im_row = h_offset + h * stride;
+                int im_col = w_offset + w * stride;
+                int col_index = (c * height_col + h) * width_col + w;
+                int val = data_col[col_index];
+                col2im_add_pixel(data_im, height, width, channels,
+                                 im_row, im_col, c_im, pad, val);
+            }
+        }
+    }
+}
+
+int im2col_get_pixel(int *im, int height, int width, int channels,
+                     int row, int col, int channel, int pad)
+{
+    row -= pad;
+    col -= pad;
+
+    if(row < 0 || col < 0 || row >= height || col >= width)
+    {
+        return 0;
+    }
+
+    return im[(channel * height + row) * width + col];
+}
+
+void col2im_add_pixel(int *im, int height, int width, int channels,
+                      int row, int col, int channel, int pad, int val)
+{
+    row -= pad;
+    col -= pad;
+
+    if(row < 0 || col < 0 || row >= height || col >= width)
+    {
+        return;
+    }
+
+    im[(channel * height + row) * width + col] += val;
 }
