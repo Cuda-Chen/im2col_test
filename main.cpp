@@ -11,6 +11,8 @@ int im2col_get_pixel(int *im, int height, int width, int channels,
                      int row, int col, int channel, int pad);
 void col2im_add_pixel(int *im, int height, int width, int channels,
                       int row, int col, int channel, int pad, int val);
+void naiveGEMM(int *out, int *kernel, int *in,
+               int kernel_row, int kernel_col, int in_row, int in_col);
 
 void testConv1Channel();
 
@@ -59,14 +61,16 @@ void testConv1Channel()
     int stride = 1;
 
     // A output matrix (CHW)
-    // the dimension should be 1x3x3
+    // the dimension should be 1x5x5
     int out_c = kernel_num;
     int out_h = (in_h + 2 * pad - kernel_h) / stride + 1;
     int out_w = (in_w + 2 * pad - kernel_w) / stride + 1;
     int *out = new int[out_c * out_h * out_w];
 
     // temp array to store column
-    int data_col_size = (in_c * kernel_h * kernel_w) * (out_h * out_w);
+    int data_col_height = in_c * kernel_h * kernel_w;
+    int data_col_width = out_h * out_w;
+    int data_col_size = data_col_height * data_col_width;
     int *data_col = new int[data_col_size];
 
     // Starts to do convolution using im2col
@@ -102,6 +106,25 @@ void testConv1Channel()
             {
                 cout << endl;
             }
+        }
+    }
+
+    // apply GEMM
+    naiveGEMM(out, kernel, data_col,
+        kernel_col_height, kernel_col_width, data_col_height, data_col_width);
+
+    // Then do col2im
+
+    // Output out
+    // The dimension of out should be N x out_h x out_w
+    cout << endl << "out content:" << endl;
+    for(int i = 0; i < out_c * out_h * out_w; i++)
+    {
+        cout << setw(4) << out[i] << " ";
+        line_counter++;
+        if(line_counter % (out_h * out_w) == 0)
+        {
+            cout << endl;
         }
     }
 }
@@ -185,4 +208,26 @@ void col2im_add_pixel(int *im, int height, int width, int channels,
     }
 
     im[(channel * height + row) * width + col] += val;
+}
+
+void naiveGEMM(int *out, int *kernel, int *in,
+               int kernel_row, int kernel_col, int in_row, int in_col)
+{
+    // The output matrix dimension will be kernel_row * in_col
+
+    for(int i = 0; i < kernel_row; i++)
+    {
+        for(int j = 0; j < in_col; j++)
+        {
+            out[i * in_col + j] = 0;
+            for(int k = 0; k < in_row; k++)
+            {
+                out[i * in_col + j] +=
+                    kernel[i * kernel_col + k] *
+                    in[k * in_col + j];
+                cout << i << " " << j << " " << k << " " << kernel[i*kernel_col+k] << " " << in[k*in_col+j] << endl;
+            }
+        }
+    }
+
 }
