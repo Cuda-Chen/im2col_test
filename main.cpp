@@ -162,6 +162,10 @@ void testConv1Channel()
             cout << endl;
         }
     }
+
+    delete[] out;
+    delete[] data_col;
+    delete[] out_col;
 }
 
 void im2col(int *data_im, int channels, int height, int width,
