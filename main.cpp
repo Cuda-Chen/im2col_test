@@ -73,8 +73,9 @@ void testConv1Channel()
     im2col(in, in_c, in_h, in_w,
            kernel_h, stride, pad, data_col);    
 
-    // Output the result
+    // Output data_col
     int line_counter = 0;
+    cout << "data_col content:" << endl;
     for(int i = 0; i < data_col_size; i++)
     {
         cout << setw(4) << data_col[i] << " ";
@@ -82,6 +83,25 @@ void testConv1Channel()
         if(line_counter % (out_h * out_w) == 0)
         {
             cout << endl;
+        }
+    }
+
+    // Output kernel
+    // Note the dimension is changed from NCHW to Nx(CxKxK)
+    int kernel_col_height = kernel_num;
+    int kernel_col_width = kernel_c * kernel_h * kernel_w;
+    line_counter = 0;
+    cout << endl << "kernel content:" << endl;
+    for(int i = 0; i < kernel_col_height; i++)
+    {
+        for(int j = 0; j < kernel_col_width; j++)
+        {
+            cout << setw(4) << kernel[i * kernel_col_width + j] << " ";
+            line_counter++;
+            if(line_counter % kernel_col_width == 0)
+            {
+                cout << endl;
+            }
         }
     }
 }
