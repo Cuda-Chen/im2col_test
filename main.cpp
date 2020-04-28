@@ -178,8 +178,8 @@ void testConv3Channel()
         2, 0, 2, 2, 0
     };
 
-    // An 3x1x5x5 identity kernel
-    int kernel_num = 2, kernel_c = 3, kernel_h = 5, kernel_w = 5;
+    // An 2x3x3x3 identity kernel
+    int kernel_num = 2, kernel_c = 3, kernel_h = 3, kernel_w = 3;
     int kernel[] = {
         /* filter w0 */
         /* channel 0 */
@@ -234,7 +234,7 @@ void testConv3Channel()
     cout << "in_col content:" << endl;
     for(int i = 0; i < in_col_size; i++)
     {
-        cout << setw(4) << in_col[i] << " ";
+        cout << setw(2) << in_col[i] << " ";
         line_counter++;
         if(line_counter % (out_h * out_w) == 0)
         {
@@ -252,7 +252,7 @@ void testConv3Channel()
     {
         for(int j = 0; j < kernel_col_width; j++)
         {
-            cout << setw(4) << kernel[i * kernel_col_width + j] << " ";
+            cout << setw(2) << kernel[i * kernel_col_width + j] << " ";
             line_counter++;
             if(line_counter % kernel_col_width == 0)
             {
@@ -271,7 +271,7 @@ void testConv3Channel()
     cout << endl << "out content:" << endl;
     for(int i = 0; i < out_c * out_h * out_w; i++)
     {
-        cout << setw(4) << out[i] << " ";
+        cout << setw(2) << out[i] << " ";
         line_counter++;
         if(line_counter % out_w == 0)
         {
