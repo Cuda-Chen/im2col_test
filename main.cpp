@@ -13,6 +13,8 @@ void col2im_add_pixel(int *im, int height, int width, int channels,
                       int row, int col, int channel, int pad, int val);
 void naiveGEMM(int *out, int *kernel, int *in,
                int kernel_row, int kernel_col, int in_row, int in_col);
+void naiveGEMM_addBias(int *out, int *kernel, int *in, int *bias,
+                       int kernel_row, int kernel_col, int in_row, int in_col);
 
 void testConv1Channel();
 void testConv3Channel();
@@ -173,7 +175,7 @@ void testConv3Channel()
         /* channel 2 */
         0, 2, 2, 0, 2,
         0, 1, 1, 0, 2,
-        1, 2, 2, 1, 0,
+        1, 2, 1, 1, 0,
         2, 2, 0, 2, 2,
         2, 0, 2, 2, 0
     };
@@ -214,10 +216,14 @@ void testConv3Channel()
     int pad = 1, stride = 2;
 
     // A 2x3x3 output matrix
-    int out_c = 2;
+    int out_c = kernel_num;
     int out_h = (in_h + 2 * pad - kernel_h) / stride + 1;
     int out_w = (in_w + 2 * pad - kernel_w) / stride + 1;
     int *out = new int[out_c * out_h * out_w];
+
+    // Bias matrix
+    int bias_num = kernel_num;
+    int bias[] = {1, 0};
 
     // temp array to store input column
     int in_col_height = in_c * kernel_h * kernel_w;
@@ -262,7 +268,11 @@ void testConv3Channel()
     }
 
     // Apply GEMM
+#if 0
     naiveGEMM(out, kernel, in_col,
+        kernel_col_height, kernel_col_width, in_col_height, in_col_width);
+#endif
+    naiveGEMM_addBias(out, kernel, in_col, bias,
         kernel_col_height, kernel_col_width, in_col_height, in_col_width);
 
     // Output out
@@ -382,5 +392,25 @@ void naiveGEMM(int *out, int *kernel, int *in,
             }
         }
     }
+}
 
+void naiveGEMM_addBias(int *out, int *kernel, int *in, int *bias,
+                       int kernel_row, int kernel_col, int in_row, int in_col)
+{
+    /* The output matrix dimension will be kernel_row * in_col */
+
+    for(int i = 0; i < kernel_row; i++)
+    {
+        for(int j = 0; j < in_col; j++)
+        {
+            out[i * in_col + j] = 0;
+            for(int k = 0; k < in_row; k++)
+            {
+                out[i * in_col + j] +=
+                    kernel[i * kernel_col + k] *
+                    in[k * in_col + j];
+            }
+            out[i * in_col + j] += bias[i];
+        }
+    }
 }
